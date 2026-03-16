@@ -1,13 +1,13 @@
 from openai import OpenAI
 from dotenv import load_dotenv
+import os
+import json
+from agent import Agent
 
 load_dotenv()
 
 client = OpenAI()
-
-messages =[
-    {"role": "system", "content": "Eres Jarvis y tu creador es Jano"}
-]
+agent = Agent()
 
 while True:
 
@@ -22,15 +22,17 @@ while True:
         break
 
     #Agregar nuestro mensaje al historial
-    messages.append({"role": "user", "content": user_input})
+    agent.messages.append({"role": "user", "content": user_input})
 
-    response = client.responses.create(
-        model="gpt-5-nano",
-        input=messages
-    )
+    while True:
+        response = client.responses.create(
+            model="gpt-5-nano",
+            input=agent.messages,
+            tools=agent.tools
+        )
 
-    assistant_reply = response.output_text
-    messages.append({"role": "assistant", "content": assistant_reply})
+        called_tool = agent.process_response(response)
 
-    print(f"Asistente: {assistant_reply}")
-    
+        #si no se llamo herramienta, tenemos la respuesta final
+        if not called_tool:
+            break
